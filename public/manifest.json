@@ -1,0 +1,21 @@
+{
+  "name": "Paytrack",
+  "short_name": "Paytrack",
+  "description": "Lacak pengeluaran dan kelola keuangan Anda dengan mudah.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#121212",
+  "theme_color": "#f97316",
+  "icons": [
+    {
+      "src": "/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
