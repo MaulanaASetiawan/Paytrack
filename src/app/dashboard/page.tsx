@@ -121,9 +121,10 @@ export default async function DashboardOverview() {
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
         <div className="xl:col-span-2">
-          {expenses.length > 0 && (
+          {(expenses.length > 0 || incomes.length > 0) && (
             <ExpenseChartsWrapper 
               expenses={expenses} 
+              incomes={incomes}
               currentYear={currentYear} 
               currentMonth={currentMonth} 
             />

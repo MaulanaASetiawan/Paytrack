@@ -129,6 +129,22 @@ export default function ExpenseList({ expenses, categories }: ExpenseListProps) 
                     >
                       {expense.categories?.name || "Tanpa Kategori"}
                     </span>
+                    <span className="hidden sm:inline">•</span>
+                    {expense.is_from_wallet === false ? (
+                      expense.description?.startsWith("Penarikan Tabungan:") ? (
+                        <span className="rounded-full bg-blue-500/10 px-1.5 py-0.5 font-medium text-blue-400 border border-blue-500/20 text-[10px]">
+                          Penarikan
+                        </span>
+                      ) : (
+                        <span className="rounded-full bg-emerald-500/10 px-1.5 py-0.5 font-medium text-emerald-400 border border-emerald-500/20 text-[10px]">
+                          Cash
+                        </span>
+                      )
+                    ) : (
+                      <span className="rounded-full bg-orange-500/10 px-1.5 py-0.5 font-medium text-orange-400 border border-orange-500/20 text-[10px]">
+                        Saldo Utama
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useRef, useEffect } from "react";
+import { useActionState, useRef, useEffect, useState } from "react";
 import { createExpense, updateExpense } from "@/lib/actions/expenses";
 import type { ExpenseWithCategory, Category } from "@/types/database.types";
 import { Check } from "lucide-react";
@@ -17,6 +17,9 @@ interface ExpenseFormProps {
 
 export default function ExpenseForm({ expense, categories, onCancel, onSuccess }: ExpenseFormProps) {
   const isEditing = !!expense;
+  const [source, setSource] = useState<"wallet" | "cash">(
+    expense?.is_from_wallet === false ? "cash" : "wallet"
+  );
   
   const updateAction = updateExpense.bind(null, expense?.id || "");
   const [state, action, isPending] = useActionState(
@@ -110,6 +113,43 @@ export default function ExpenseForm({ expense, categories, onCancel, onSuccess }
             categories={categories} 
             defaultValue={expense?.category_id || "unassigned"}
           />
+        </div>
+
+        <div className="space-y-1.5 sm:col-span-2 lg:col-span-4 mt-2">
+          <label className="text-xs font-medium text-gray-400 mb-2 block">
+            Sumber Dana
+          </label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <label className={`flex items-start gap-2.5 p-3 rounded-lg border cursor-pointer transition-colors ${source === "wallet" ? "border-orange-500/60 bg-orange-500/10 text-white" : "border-neutral-800 bg-neutral-800/40 text-neutral-400 hover:text-white"}`}>
+              <input
+                type="radio"
+                name="is_from_wallet"
+                value="true"
+                checked={source === "wallet"}
+                onChange={() => setSource("wallet")}
+                className="mt-0.5 accent-orange-500 h-4 w-4"
+              />
+              <div>
+                <span className="text-xs font-semibold block text-white">Saldo Utama (Dompet)</span>
+                <span className="text-[11px] text-gray-400 block mt-0.5">Memotong sisa saldo utama Anda secara otomatis.</span>
+              </div>
+            </label>
+
+            <label className={`flex items-start gap-2.5 p-3 rounded-lg border cursor-pointer transition-colors ${source === "cash" ? "border-emerald-500/60 bg-emerald-500/10 text-white" : "border-neutral-800 bg-neutral-800/40 text-neutral-400 hover:text-white"}`}>
+              <input
+                type="radio"
+                name="is_from_wallet"
+                value="false"
+                checked={source === "cash"}
+                onChange={() => setSource("cash")}
+                className="mt-0.5 accent-emerald-500 h-4 w-4"
+              />
+              <div>
+                <span className="text-xs font-semibold block text-white">Cash / Tunai Fisik</span>
+                <span className="text-[11px] text-gray-400 block mt-0.5">Saldo utama tidak terpotong, hanya dicatat di pengeluaran.</span>
+              </div>
+            </label>
+          </div>
         </div>
       </div>
 

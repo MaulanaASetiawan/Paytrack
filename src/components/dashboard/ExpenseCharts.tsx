@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
-import type { ExpenseWithCategory } from "@/types/database.types";
+import { useMemo, useState } from "react";
+import type { ExpenseWithCategory, Income } from "@/types/database.types";
 import {
   PieChart,
   Pie,
@@ -17,18 +17,20 @@ import {
 
 interface ExpenseChartsProps {
   expenses: ExpenseWithCategory[];
+  incomes?: Income[];
   currentYear: number;
   currentMonth: number;
 }
 
-export default function ExpenseCharts({ expenses, currentYear, currentMonth }: ExpenseChartsProps) {
+export default function ExpenseCharts({ expenses, incomes = [], currentYear, currentMonth }: ExpenseChartsProps) {
+  const [trendFilter, setTrendFilter] = useState<"all" | "income" | "expense">("all");
 
   const categoryData = useMemo(() => {
     const categoryTotals: Record<string, { value: number; color: string }> = {};
 
     expenses.forEach((expense) => {
       const catName = expense.categories?.name || "Lainnya";
-      const catColor = expense.categories?.color || "#525252"; // neutral-600 fallback
+      const catColor = expense.categories?.color || "#525252";
 
       if (!categoryTotals[catName]) {
         categoryTotals[catName] = { value: 0, color: catColor };
@@ -42,7 +44,7 @@ export default function ExpenseCharts({ expenses, currentYear, currentMonth }: E
         value: data.value,
         color: data.color,
       }))
-      .sort((a, b) => b.value - a.value); // Sort descending
+      .sort((a, b) => b.value - a.value);
   }, [expenses]);
 
   const dailyTrendData = useMemo(() => {
@@ -51,6 +53,7 @@ export default function ExpenseCharts({ expenses, currentYear, currentMonth }: E
     const dailyTotals = Array.from({ length: daysInMonth }, (_, i) => ({
       day: (i + 1).toString(),
       amount: 0,
+      income: 0,
     }));
 
     expenses.forEach((expense) => {
@@ -58,12 +61,25 @@ export default function ExpenseCharts({ expenses, currentYear, currentMonth }: E
 
       if (date.getMonth() + 1 === currentMonth && date.getFullYear() === currentYear) {
         const dayIndex = date.getDate() - 1;
-        dailyTotals[dayIndex].amount += expense.amount;
+        if (dayIndex >= 0 && dayIndex < daysInMonth) {
+          dailyTotals[dayIndex].amount += expense.amount;
+        }
+      }
+    });
+
+    incomes.forEach((inc) => {
+      const date = new Date(inc.date);
+
+      if (date.getMonth() + 1 === currentMonth && date.getFullYear() === currentYear) {
+        const dayIndex = date.getDate() - 1;
+        if (dayIndex >= 0 && dayIndex < daysInMonth) {
+          dailyTotals[dayIndex].income += inc.amount;
+        }
       }
     });
 
     return dailyTotals;
-  }, [expenses, currentYear, currentMonth]);
+  }, [expenses, incomes, currentYear, currentMonth]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("id-ID", {
@@ -73,22 +89,37 @@ export default function ExpenseCharts({ expenses, currentYear, currentMonth }: E
     }).format(value);
   };
 
-  const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{ name?: string, value: number, payload: { day?: string } }> }) => {
+  const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{ name?: string, value: number, dataKey?: string, payload: { day?: string; amount?: number; income?: number } }> }) => {
     if (active && payload && payload.length) {
+      const data = payload[0].payload;
       return (
-        <div className="rounded-lg border border-neutral-700 bg-neutral-900 p-3 shadow-xl">
-          <p className="mb-1 text-sm font-medium text-white">{payload[0].name || `Tanggal ${payload[0].payload.day}`}</p>
-          <p className="text-sm font-bold text-orange-500">
-            {formatCurrency(payload[0].value)}
+        <div className="rounded-lg border border-neutral-700 bg-neutral-900 p-3 shadow-xl space-y-1">
+          <p className="text-xs font-semibold text-white">
+            {payload[0].name ? payload[0].name : `Tanggal ${data.day}`}
           </p>
+          {data.income !== undefined && data.income > 0 && (
+            <p className="text-xs font-medium text-emerald-400">
+              Masuk: +{formatCurrency(data.income)}
+            </p>
+          )}
+          {data.amount !== undefined && data.amount > 0 && (
+            <p className="text-xs font-medium text-orange-400">
+              Keluar: -{formatCurrency(data.amount)}
+            </p>
+          )}
+          {(!data.income && !data.amount) && payload[0].value !== undefined && (
+            <p className="text-xs font-bold text-orange-400">
+              {formatCurrency(payload[0].value)}
+            </p>
+          )}
         </div>
       );
     }
     return null;
   };
 
-  if (expenses.length === 0) {
-    return null; // Don't show charts if there is no data
+  if (expenses.length === 0 && incomes.length === 0) {
+    return null;
   }
 
   return (
@@ -129,7 +160,33 @@ export default function ExpenseCharts({ expenses, currentYear, currentMonth }: E
       </div>
 
       <div className="flex flex-col rounded-xl border border-neutral-800 bg-neutral-900/50 p-6">
-        <h3 className="mb-6 text-base font-medium text-white">Tren Harian</h3>
+        <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <h3 className="text-base font-medium text-white">Tren Transaksi Harian</h3>
+          <div className="flex items-center gap-1 bg-neutral-800/80 p-0.5 rounded-lg text-xs self-start sm:self-auto">
+            <button
+              type="button"
+              onClick={() => setTrendFilter("all")}
+              className={`px-2 py-1 rounded-md transition-colors ${trendFilter === "all" ? "bg-neutral-700 text-white font-medium" : "text-neutral-400 hover:text-white"}`}
+            >
+              Semua
+            </button>
+            <button
+              type="button"
+              onClick={() => setTrendFilter("income")}
+              className={`px-2 py-1 rounded-md transition-colors ${trendFilter === "income" ? "bg-emerald-600/40 text-emerald-300 font-medium" : "text-neutral-400 hover:text-white"}`}
+            >
+              Uang Masuk
+            </button>
+            <button
+              type="button"
+              onClick={() => setTrendFilter("expense")}
+              className={`px-2 py-1 rounded-md transition-colors ${trendFilter === "expense" ? "bg-orange-600/40 text-orange-300 font-medium" : "text-neutral-400 hover:text-white"}`}
+            >
+              Uang Keluar
+            </button>
+          </div>
+        </div>
+
         <div className="flex-1 min-h-[250px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={dailyTrendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
@@ -151,7 +208,12 @@ export default function ExpenseCharts({ expenses, currentYear, currentMonth }: E
                 tickLine={false}
               />
               <Tooltip content={<CustomTooltip />} cursor={{ fill: '#262626' }} />
-              <Bar dataKey="amount" fill="#f97316" radius={[4, 4, 0, 0]} maxBarSize={40} />
+              {(trendFilter === "all" || trendFilter === "income") && (
+                <Bar dataKey="income" name="Uang Masuk" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={trendFilter === "all" ? 16 : 36} />
+              )}
+              {(trendFilter === "all" || trendFilter === "expense") && (
+                <Bar dataKey="amount" name="Uang Keluar" fill="#f97316" radius={[4, 4, 0, 0]} maxBarSize={trendFilter === "all" ? 16 : 36} />
+              )}
             </BarChart>
           </ResponsiveContainer>
         </div>

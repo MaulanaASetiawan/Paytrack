@@ -17,19 +17,29 @@ export default function ExportCSVButton({ expenses, month, year }: ExportCSVButt
     try {
       setIsExporting(true);
 
-      const headers = ["Tanggal", "Deskripsi", "Kategori", "Jumlah (IDR)"];
+      const headers = ["Tanggal", "Deskripsi", "Kategori", "Sumber Dana", "Jumlah (IDR)"];
 
-      const rows = expenses.map((exp) => [
-        exp.date,
+      const rows = expenses.map((exp) => {
+        let source = "Saldo Utama";
+        if (exp.is_from_wallet === false) {
+          source = exp.description?.startsWith("Penarikan Tabungan:") ? "Penarikan Tabungan" : "Cash / Tunai";
+        }
+        return [
+          exp.date,
+          `"${exp.description.replace(/"/g, '""')}"`,
+          exp.categories?.name || "Tanpa Kategori",
+          source,
+          exp.amount
+        ];
+      });
 
-        `"${exp.description.replace(/"/g, '""')}"`,
-        exp.categories?.name || "Tanpa Kategori",
-        exp.amount
-      ]);
+      const totalAmount = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+      const totalRow = ["", "", "", "TOTAL PENGELUARAN", totalAmount];
 
       const csvContent = [
         headers.join(","),
-        ...rows.map(row => row.join(","))
+        ...rows.map(row => row.join(",")),
+        totalRow.join(",")
       ].join("\n");
 
       const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });

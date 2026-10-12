@@ -89,6 +89,8 @@ export async function createExpense(
   }
 
   const category_id = categoryIdStr === "unassigned" || !categoryIdStr ? null : categoryIdStr;
+  const isFromWalletStr = formData.get("is_from_wallet") as string | null;
+  const is_from_wallet = isFromWalletStr === "false" ? false : true;
 
   const { data, error } = await supabase
     .from("expenses")
@@ -98,6 +100,7 @@ export async function createExpense(
       description: description.trim(),
       date,
       category_id,
+      is_from_wallet,
     })
     .select()
     .single();
@@ -154,6 +157,8 @@ export async function updateExpense(
   }
 
   const category_id = categoryIdStr === "unassigned" || !categoryIdStr ? null : categoryIdStr;
+  const isFromWalletStr = formData.get("is_from_wallet") as string | null;
+  const is_from_wallet = isFromWalletStr === "false" ? false : true;
 
   const { data, error } = await supabase
     .from("expenses")
@@ -162,6 +167,7 @@ export async function updateExpense(
       description: description.trim(),
       date,
       category_id,
+      is_from_wallet,
     })
     .eq("id", id)
     .eq("user_id", user.id)

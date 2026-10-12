@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import type { ExpenseWithCategory } from "@/types/database.types";
+import type { ExpenseWithCategory, Income } from "@/types/database.types";
 
 const ExpenseCharts = dynamic(() => import("./ExpenseCharts"), {
   ssr: false,
@@ -15,6 +15,7 @@ const ExpenseCharts = dynamic(() => import("./ExpenseCharts"), {
 
 interface ExpenseChartsWrapperProps {
   expenses: ExpenseWithCategory[];
+  incomes?: Income[];
   currentYear: number;
   currentMonth: number;
 }
@@ -25,5 +26,5 @@ export default function ExpenseChartsWrapper(props: ExpenseChartsWrapperProps) {
     (exp) => exp.categories?.name.toLowerCase() !== "tabungan"
   );
 
-  return <ExpenseCharts {...props} expenses={filteredExpenses} />;
+  return <ExpenseCharts {...props} expenses={filteredExpenses} incomes={props.incomes} />;
 }

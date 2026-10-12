@@ -40,16 +40,17 @@ export async function getWalletBalance(): Promise<{ balance: number; totalIncome
 
   const { data: expenses } = await supabase
     .from("expenses")
-    .select("amount, is_from_wallet")
+    .select("amount, is_from_wallet, description")
     .eq("user_id", user.id);
 
   let totalExpense = 0;
   let totalSavingsReturn = 0;
 
   expenses?.forEach((exp) => {
-
     if (exp.is_from_wallet === false) {
-      totalSavingsReturn += exp.amount;
+      if (exp.description?.startsWith("Penarikan Tabungan:")) {
+        totalSavingsReturn += exp.amount;
+      }
     } else {
       totalExpense += exp.amount;
     }
